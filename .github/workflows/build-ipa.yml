@@ -1,69 +1,80 @@
-name Build HTML app as IPA
+name: Build HTML app as IPA
 
-on
-  workflow_dispatch
+on:
+  workflow_dispatch:
 
-env
-  APP_ID com.dhruvverma.htmlapp
-  APP_NAME HTML App
+env:
+  APP_ID: com.dhruvverma.htmlapp
+  APP_NAME: Times
 
-jobs
-  build
-    runs-on macos-latest
-    timeout-minutes 45
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 45
 
-    steps
-      - name Check out repository
-        uses actionscheckout@v6
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
 
-      - name Set up Xcode
-        uses maxim-lobanovsetup-xcode@v1
-        with
-          xcode-version latest-stable
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
-      - name Install Capacitor
-        run 
+      - name: Install Capacitor
+        run: |
+          set -euxo pipefail
           npm init -y
-          npm install @capacitorcore @capacitorcli @capacitorios
+          npm install @capacitor/core @capacitor/cli @capacitor/ios
 
-      - name Prepare web files
-        run 
+      - name: Prepare web files
+        run: |
+          set -euxo pipefail
           mkdir -p www
-          cp -R app www
+          cp -R app/* www/
+          ls -la www
 
-      - name Create Capacitor iOS project
-        run 
-          npx cap init $APP_NAME $APP_ID --web-dir www
+      - name: Create Capacitor iOS project
+        run: |
+          set -euxo pipefail
+          npx cap init "$APP_NAME" "$APP_ID" --web-dir www
           npx cap add ios
           npx cap sync ios
+          ls -la ios/App
 
-      - name Install CocoaPods dependencies
-        run 
-          cd iosApp
-          pod install --repo-update
+      - name: Generate iOS app icon
+        run: |
+          set -euxo pipefail
+          npx @capacitor/assets generate --ios \
+            --iconBackgroundColor '#ffffff' \
+            --splashBackgroundColor '#ffffff'
 
-      - name Build unsigned IPA
-        run 
-          xcodebuild -project iosAppApp.xcodeproj 
-            -scheme App 
-            -configuration Release 
-            -destination genericplatform=iOS 
-            -archivePath buildApp.xcarchive 
-            CODE_SIGNING_ALLOWED=NO 
-            CODE_SIGNING_REQUIRED=NO 
-            CODE_SIGN_IDENTITY= 
+      - name: Build unsigned IPA
+        run: |
+          set -euxo pipefail
+          cd ios/App
+          xcodebuild -list -project App.xcodeproj
+
+          xcodebuild -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath ../../build/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             archive
 
-          mkdir -p buildipaPayload
-          cp -R buildApp.xcarchiveProductsApplicationsApp.app 
-            buildipaPayload
+          mkdir -p ../../build/ipa/Payload
+          cp -R "../../build/App.xcarchive/Products/Applications/App.app" \
+            ../../build/ipa/Payload/
 
-          cd buildipa
-          zip -qry ..HTMLApp-unsigned.ipa Payload
+          cd ../../build/ipa
+          zip -qry ../HTMLApp-unsigned.ipa Payload
 
-      - name Upload IPA
-        uses actionsupload-artifact@v7
-        with
-          name html-app-unsigned-ipa
-          path build.ipa
-          if-no-files-found error
+      - name: Upload IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: html-app-unsigned-ipa
+          path: build/*.ipa
+          if-no-files-found: error
