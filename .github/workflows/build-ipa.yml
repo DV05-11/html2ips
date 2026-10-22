@@ -1,0 +1,69 @@
+name Build HTML app as IPA
+
+on
+  workflow_dispatch
+
+env
+  APP_ID com.dhruvverma.htmlapp
+  APP_NAME HTML App
+
+jobs
+  build
+    runs-on macos-latest
+    timeout-minutes 45
+
+    steps
+      - name Check out repository
+        uses actionscheckout@v6
+
+      - name Set up Xcode
+        uses maxim-lobanovsetup-xcode@v1
+        with
+          xcode-version latest-stable
+
+      - name Install Capacitor
+        run 
+          npm init -y
+          npm install @capacitorcore @capacitorcli @capacitorios
+
+      - name Prepare web files
+        run 
+          mkdir -p www
+          cp -R app www
+
+      - name Create Capacitor iOS project
+        run 
+          npx cap init $APP_NAME $APP_ID --web-dir www
+          npx cap add ios
+          npx cap sync ios
+
+      - name Install CocoaPods dependencies
+        run 
+          cd iosApp
+          pod install --repo-update
+
+      - name Build unsigned IPA
+        run 
+          xcodebuild -project iosAppApp.xcodeproj 
+            -scheme App 
+            -configuration Release 
+            -destination genericplatform=iOS 
+            -archivePath buildApp.xcarchive 
+            CODE_SIGNING_ALLOWED=NO 
+            CODE_SIGNING_REQUIRED=NO 
+            CODE_SIGN_IDENTITY= 
+            archive
+
+          mkdir -p buildipaPayload
+          cp -R buildApp.xcarchiveProductsApplicationsApp.app 
+            buildipaPayload
+
+          cd buildipa
+          zip -qry ..HTMLApp-unsigned.ipa Payload
+
+      - name Upload IPA
+        uses actionsupload-artifact@v7
+        with
+          name html-app-unsigned-ipa
+          path build.ipa
+          if-no-files-found error
