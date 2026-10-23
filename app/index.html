@@ -16,10 +16,32 @@
 <style>
   :root { color-scheme: dark; --ink:#130000; --text:#F6EDE8; --muted:#A8908A; --mint:#FF6A4D; --mint-a:#FF3B30; --cyan:#FFB347;
           --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.22,1,.36,1); --mono:ui-monospace,"SF Mono",Menlo,monospace; }
-  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-  html, body { background: var(--ink); }
-  body { color: var(--text); margin: 0; min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased;
-         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    box-sizing: border-box;
+  }
+  input, textarea, select {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+  html, body {
+    background: var(--ink);
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  body {
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  }
   ::selection { background: rgba(255,77,61,.3); }
   .text-sky-400 { color: var(--mint) !important; }
 
@@ -81,11 +103,11 @@
 
   /* ---------- Launch splash (from "alexruix" ripple) ---------- */
   .splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
-    background: var(--ink); pointer-events: none; animation: splashOut .8s var(--ease) 1.8s forwards; }
+    background: var(--ink); pointer-events: auto; cursor: pointer; animation: splashOut .45s var(--ease) .4s forwards; }
   .ripple { display: grid; grid-template-columns: repeat(3, 24px); gap: 4px; }
   .ripple i { height: 24px; border-radius: 7px; background: transparent; animation: ripple 1.5s ease infinite; animation-delay: var(--d); }
   @keyframes ripple { 0% { background: transparent; } 30% { background: var(--c); box-shadow: 0 0 18px -2px var(--c); } 60%, 100% { background: transparent; } }
-  @keyframes splashOut { to { opacity: 0; visibility: hidden; transform: scale(1.06); } }
+  @keyframes splashOut { to { opacity: 0; visibility: hidden; pointer-events: none; transform: scale(1.06); } }
 
   /* ---------- Status window (from "loading status"), Apple-style ---------- */
   #exportStatus { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 70; width: 220px; margin-left: -110px; pointer-events: none;
@@ -149,18 +171,62 @@
   #sheetList > .glass:active { transform: scale(.97); }
   #sheetList > .glass > svg { padding: 6px; width: 30px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--muted); }
 
-  /* ---------- Screen reveal ---------- */
-  .view-hidden { display: none; }
+  /* ---------- Screen reveal & iOS view transitions ---------- */
+  .view {
+    width: 100%;
+    will-change: transform, opacity;
+  }
+  .view-hidden { display: none !important; }
+  .view-push-in { animation: iosPushIn .32s cubic-bezier(.32,.72,0,1) forwards; }
+  .view-push-out { animation: iosPushOut .32s cubic-bezier(.32,.72,0,1) forwards; }
+  .view-pop-in { animation: iosPopIn .32s cubic-bezier(.32,.72,0,1) forwards; }
+  .view-pop-out { animation: iosPopOut .32s cubic-bezier(.32,.72,0,1) forwards; }
+
+  @keyframes iosPushIn {
+    0% { transform: translate3d(100%, 0, 0); opacity: .85; }
+    100% { transform: translate3d(0, 0, 0); opacity: 1; }
+  }
+  @keyframes iosPushOut {
+    0% { transform: translate3d(0, 0, 0); opacity: 1; filter: brightness(1); }
+    100% { transform: translate3d(-22%, 0, 0); opacity: .35; filter: brightness(.6); }
+  }
+  @keyframes iosPopIn {
+    0% { transform: translate3d(-22%, 0, 0); opacity: .35; filter: brightness(.6); }
+    100% { transform: translate3d(0, 0, 0); opacity: 1; filter: brightness(1); }
+  }
+  @keyframes iosPopOut {
+    0% { transform: translate3d(0, 0, 0); opacity: 1; }
+    100% { transform: translate3d(100%, 0, 0); opacity: .85; }
+  }
+
   @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
-  .view:not(.view-hidden) > *:not(#dayRows):not(#sheetList):not(.dock) { animation: rise .7s var(--ease) backwards; }
-  .view:not(.view-hidden) > :nth-child(2) { animation-delay: 60ms; } .view:not(.view-hidden) > :nth-child(3) { animation-delay: 120ms; }
-  .view:not(.view-hidden) > :nth-child(4) { animation-delay: 180ms; } .view:not(.view-hidden) > :nth-child(n+5) { animation-delay: 240ms; }
+  .view:not(.view-hidden):not(.view-push-in):not(.view-pop-in) > *:not(#dayRows):not(#sheetList):not(.dock) { animation: rise .7s var(--ease) backwards; }
+  .view:not(.view-hidden):not(.view-push-in):not(.view-pop-in) > :nth-child(2) { animation-delay: 60ms; }
+  .view:not(.view-hidden):not(.view-push-in):not(.view-pop-in) > :nth-child(3) { animation-delay: 120ms; }
+  .view:not(.view-hidden):not(.view-push-in):not(.view-pop-in) > :nth-child(4) { animation-delay: 180ms; }
+  .view:not(.view-hidden):not(.view-push-in):not(.view-pop-in) > :nth-child(n+5) { animation-delay: 240ms; }
   #dayRows > .day-card, #sheetList > * { animation: rise .7s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 55ms + 200ms); }
   #dayRows > :nth-child(2), #sheetList > :nth-child(2) { --i: 1; } #dayRows > :nth-child(3), #sheetList > :nth-child(3) { --i: 2; }
   #dayRows > :nth-child(4), #sheetList > :nth-child(4) { --i: 3; } #dayRows > :nth-child(5), #sheetList > :nth-child(5) { --i: 4; }
   #dayRows > :nth-child(6), #sheetList > :nth-child(6) { --i: 5; } #dayRows > :nth-child(n+7), #sheetList > :nth-child(n+7) { --i: 6; }
   .dock { animation: rise .8s var(--spring) .5s backwards; }
-  @media (prefers-reduced-motion: reduce) { .splash { display: none; } .blob, .bin-track { animation: none; } .view:not(.view-hidden) > *, #dayRows > .day-card, #sheetList > *, .dock { animation-duration: .01ms !important; animation-delay: 0s !important; } }
+
+  /* iOS Dialog modal animations */
+  #iosDialogWrap { transition: opacity .25s var(--ease), visibility 0s; }
+  #iosDialogWrap.hidden-modal { opacity: 0; pointer-events: none; visibility: hidden; transition: opacity .22s, visibility 0s .25s; }
+  #iosDialogWrap .sheet { transition: transform .45s var(--spring); }
+  #iosDialogWrap.hidden-modal .sheet { transform: translateY(30px) scale(.92); }
+  #iosDialogBg { background: rgba(16,0,0,.72) !important; -webkit-backdrop-filter: blur(24px) saturate(140%); backdrop-filter: blur(24px) saturate(140%); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .splash { display: none; }
+    .blob, .bin-track { animation: none; }
+    .view, .view-push-in, .view-push-out, .view-pop-in, .view-pop-out,
+    .view:not(.view-hidden) > *, #dayRows > .day-card, #sheetList > *, .dock {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 
   /* ======== v3: oxblood / ember — wodniack.dev x chaingpt.org cues ======== */
   .btn-primary { background: linear-gradient(120deg, #FF3B30, #FF5A3C 60%, #FF7A2E); text-shadow: 0 1px 2px rgba(90,0,0,.45);
@@ -336,7 +402,7 @@
 <div class="bg-grid" aria-hidden="true"></div>
 <canvas id="bgWaves" aria-hidden="true"></canvas>
 
-<div class="splash" aria-hidden="true">
+<div id="launchSplash" class="splash" aria-hidden="true" onclick="this.remove()">
   <div class="ripple">
     <i style="--c:#FF2D1F;--d:0ms"></i><i style="--c:#FF3B2A;--d:100ms"></i><i style="--c:#FF4A33;--d:200ms"></i>
     <i style="--c:#FF5A2B;--d:100ms"></i><i style="--c:#FF6A22;--d:200ms"></i><i style="--c:#FF7402;--d:300ms"></i>
@@ -515,10 +581,127 @@
   </div>
 </div>
 
+<!-- iOS DIALOG MODAL (Alert / Confirm) -->
+<div id="iosDialogWrap" class="hidden-modal fixed inset-0 z-50 flex items-center justify-center px-5">
+  <div class="absolute inset-0" id="iosDialogBg"></div>
+  <div class="glass sheet relative w-full max-w-[360px] p-6 z-10 text-center rounded-3xl border border-white/10 shadow-2xl">
+    <div id="iosDialogIcon" class="mx-auto mb-3 w-12 h-12 rounded-full flex items-center justify-center bg-white/5 text-sky-400">
+      <i data-lucide="alert-circle" class="w-6 h-6"></i>
+    </div>
+    <h3 id="iosDialogTitle" class="text-base font-bold text-white mb-2"></h3>
+    <div id="iosDialogMsg" class="text-xs text-slate-300 leading-relaxed mb-6 whitespace-pre-line text-left"></div>
+    <div id="iosDialogButtons" class="flex gap-2.5">
+      <button id="iosDialogCancel" class="btn-glass flex-1 text-sm py-2.5">Cancel</button>
+      <button id="iosDialogConfirm" class="btn-primary flex-1 text-sm py-2.5">Continue</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function safeLucideIcons(){ try{ if(window.lucide) lucide.createIcons(); }catch(e){ console.warn('lucide icons failed to render', e); } }
 safeLucideIcons();
 window.addEventListener('load', safeLucideIcons);
+
+// Native iOS Haptics Bridge
+const NativeHaptics = {
+  impact: function(style = 'LIGHT') {
+    try {
+      if (window.Capacitor?.Plugins?.Haptics) {
+        window.Capacitor.Plugins.Haptics.impact({ style: String(style).toUpperCase() });
+      } else if (navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    } catch(e) {}
+  },
+  notification: function(type = 'SUCCESS') {
+    try {
+      if (window.Capacitor?.Plugins?.Haptics) {
+        window.Capacitor.Plugins.Haptics.notification({ type: String(type).toUpperCase() });
+      } else if (navigator.vibrate) {
+        navigator.vibrate([15, 30, 15]);
+      }
+    } catch(e) {}
+  },
+  selection: function() {
+    try {
+      if (window.Capacitor?.Plugins?.Haptics) {
+        window.Capacitor.Plugins.Haptics.selectionChanged();
+      }
+    } catch(e) {}
+  }
+};
+
+// Global iOS-style modal dialogs
+function appAlert(msg, title = 'Times') {
+  NativeHaptics.notification('WARNING');
+  if (window.Capacitor?.Plugins?.Dialog) {
+    return window.Capacitor.Plugins.Dialog.alert({ title, message: String(msg) });
+  }
+  return new Promise((resolve) => {
+    const wrap = document.getElementById('iosDialogWrap');
+    if (!wrap) { alert(msg); return resolve(); }
+    document.getElementById('iosDialogTitle').textContent = title;
+    document.getElementById('iosDialogMsg').textContent = msg;
+    document.getElementById('iosDialogCancel').style.display = 'none';
+    const confirmBtn = document.getElementById('iosDialogConfirm');
+    confirmBtn.textContent = 'OK';
+    wrap.classList.remove('hidden-modal');
+    safeLucideIcons();
+
+    function onOk() {
+      NativeHaptics.impact('LIGHT');
+      wrap.classList.add('hidden-modal');
+      confirmBtn.removeEventListener('click', onOk);
+      resolve();
+    }
+    confirmBtn.addEventListener('click', onOk, { once: true });
+  });
+}
+
+function appConfirm(msg, title = 'Confirm') {
+  NativeHaptics.notification('WARNING');
+  if (window.Capacitor?.Plugins?.Dialog) {
+    return window.Capacitor.Plugins.Dialog.confirm({ title, message: String(msg), okButtonTitle: 'Continue', cancelButtonTitle: 'Cancel' }).then(r => !!r.value);
+  }
+  return new Promise((resolve) => {
+    const wrap = document.getElementById('iosDialogWrap');
+    if (!wrap) { return resolve(confirm(msg)); }
+    document.getElementById('iosDialogTitle').textContent = title;
+    document.getElementById('iosDialogMsg').textContent = msg;
+    const cancelBtn = document.getElementById('iosDialogCancel');
+    cancelBtn.style.display = '';
+    const confirmBtn = document.getElementById('iosDialogConfirm');
+    confirmBtn.textContent = 'Continue';
+    wrap.classList.remove('hidden-modal');
+    safeLucideIcons();
+
+    function cleanup(val) {
+      wrap.classList.add('hidden-modal');
+      cancelBtn.onclick = null;
+      confirmBtn.onclick = null;
+      resolve(val);
+    }
+    cancelBtn.onclick = () => { NativeHaptics.impact('LIGHT'); cleanup(false); };
+    confirmBtn.onclick = () => { NativeHaptics.impact('LIGHT'); cleanup(true); };
+  });
+}
+
+// Capacitor plugins setup
+function initCapacitorPlugins() {
+  try {
+    if (window.Capacitor?.Plugins?.StatusBar) {
+      window.Capacitor.Plugins.StatusBar.setStyle({ style: 'DARK' });
+      window.Capacitor.Plugins.StatusBar.setBackgroundColor({ color: '#090707' });
+      window.Capacitor.Plugins.StatusBar.setOverlaysWebView({ overlay: false });
+    }
+  } catch(e) {}
+  try {
+    if (window.Capacitor?.Plugins?.Keyboard) {
+      window.Capacitor.Plugins.Keyboard.setResizeMode({ mode: 'native' });
+    }
+  } catch(e) {}
+}
+window.addEventListener('DOMContentLoaded', initCapacitorPlugins);
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const DAY_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -529,7 +712,7 @@ function readSavedSheets() {
 let sheets = readSavedSheets();
 function persistSheets() {
   try { localStorage.setItem('timesheets_v2', JSON.stringify(sheets)); return true; }
-  catch (error) { alert('The browser could not save these timesheets. Export a backup and check available device storage.'); console.error(error); return false; }
+  catch (error) { appAlert('The device could not save these timesheets. Export a backup and check available device storage.', 'Storage Full'); console.error(error); return false; }
 }
 function downloadJSON(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -603,8 +786,8 @@ function getPos(e) {
 canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('mousemove', (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 canvas.addEventListener('mouseup', () => drawing = false);
-canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); e.preventDefault(); });
-canvas.addEventListener('touchmove', (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
+canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); e.preventDefault(); }, { passive: false });
+canvas.addEventListener('touchmove', (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }, { passive: false });
 canvas.addEventListener('touchend', () => drawing = false);
 ctx.strokeStyle = '#000000';
 ctx.lineWidth = 4;
@@ -620,7 +803,7 @@ function buildDaysUI() {
     const row = document.createElement('div');
     row.className = `day-card ${isToday ? 'open' : ''}`;
     row.innerHTML = `
-      <div class="day-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="day-head" onclick="NativeHaptics.selection();this.parentElement.classList.toggle('open')">
         <div class="flex items-center gap-2">
           <span class="font-semibold text-sm ${isToday ? 'text-sky-400' : 'text-slate-200'}">${day} (${DAY_FULL[idx]})</span>
           ${isToday ? '<span class="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-full font-bold">TODAY</span>' : ''}
@@ -697,12 +880,16 @@ function updateSummary(idx) {
 
 function openSigModal(idx) {
   activeSigDay = idx;
+  NativeHaptics.impact('LIGHT');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   document.getElementById('modalWrap').classList.remove('hidden-modal');
 }
 document.getElementById('modalBg').onclick = () => document.getElementById('modalWrap').classList.add('hidden-modal');
 document.getElementById('sigCloseX').onclick = () => document.getElementById('modalWrap').classList.add('hidden-modal');
-document.getElementById('sigClear').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+document.getElementById('sigClear').onclick = () => {
+  NativeHaptics.impact('MEDIUM');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+};
 document.getElementById('sigSave').onclick = () => {
   if (activeSigDay !== null) {
     const { width: W, height: H } = canvas;
@@ -727,6 +914,7 @@ document.getElementById('sigSave').onclick = () => {
     currentSheet.days[activeSigDay].signature = dataUrl;
     currentSheet.days[activeSigDay].sigTime = `${dateStr} ${timeStr}`;
     document.getElementById(`sigStatus_${activeSigDay}`).innerText = `Signed: ${dateStr} ${timeStr} \u2713`;
+    NativeHaptics.notification('SUCCESS');
   }
   document.getElementById('modalWrap').classList.add('hidden-modal');
 };
@@ -784,19 +972,65 @@ function duplicateSheet(idx) {
   sheets.push(copy);
   if(!persistSheets()) { sheets.pop(); return; }
   renderLibrary();
-  currentSheet=copy; populateFormUI(); showView('form');
+  currentSheet=copy; populateFormUI(); showView('form', 'push');
 }
-function deleteSheet(idx) {
+async function deleteSheet(idx) {
   const sheet=sheets[idx]; if(!sheet) return;
-  if(!confirm(`Delete the timesheet for “${sheet.facility||'Untitled Facility'}” starting ${sheet.weekStart||'unknown date'}? This cannot be undone unless you have a backup.`)) return;
+  const ok = await appConfirm(`Delete the timesheet for “${sheet.facility||'Untitled Facility'}” starting ${sheet.weekStart||'unknown date'}?\n\nThis cannot be undone unless you have a backup.`, 'Delete Timesheet');
+  if(!ok) return;
   const removed=sheets.splice(idx,1)[0];
   if(!persistSheets()) { sheets.splice(idx,0,removed); return; }
+  NativeHaptics.notification('SUCCESS');
   renderLibrary();
 }
 
-function showView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.add('view-hidden'));
-  document.getElementById(`view-${id}`).classList.remove('view-hidden');
+let currentViewId = 'library';
+let isTransitioningView = false;
+function showView(id, direction = 'auto') {
+  if (id === currentViewId && !document.getElementById(`view-${id}`)?.classList.contains('view-hidden')) return;
+  const currentEl = document.getElementById(`view-${currentViewId}`);
+  const targetEl = document.getElementById(`view-${id}`);
+  if (!targetEl) return;
+
+  if (direction === 'auto') {
+    direction = (id === 'library') ? 'pop' : 'push';
+  }
+
+  NativeHaptics.selection();
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (isTransitioningView || reducedMotion || !currentEl || currentEl === targetEl) {
+    document.querySelectorAll('.view').forEach(v => {
+      v.classList.add('view-hidden');
+      v.classList.remove('view-push-in', 'view-push-out', 'view-pop-in', 'view-pop-out');
+    });
+    targetEl.classList.remove('view-hidden');
+    currentViewId = id;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    safeLucideIcons();
+    return;
+  }
+
+  isTransitioningView = true;
+  targetEl.classList.remove('view-hidden');
+
+  if (direction === 'push') {
+    currentEl.classList.add('view-push-out');
+    targetEl.classList.add('view-push-in');
+  } else {
+    currentEl.classList.add('view-pop-out');
+    targetEl.classList.add('view-pop-in');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  setTimeout(() => {
+    currentEl.classList.add('view-hidden');
+    currentEl.classList.remove('view-push-in', 'view-push-out', 'view-pop-in', 'view-pop-out');
+    targetEl.classList.remove('view-push-in', 'view-push-out', 'view-pop-in', 'view-pop-out');
+    currentViewId = id;
+    isTransitioningView = false;
+    safeLucideIcons();
+  }, 320);
 }
 
 function createNewSheet() {
@@ -811,7 +1045,7 @@ function createNewSheet() {
     })
   };
   populateFormUI();
-  showView('form');
+  showView('form', 'push');
 }
 
 function populateFormUI() {
@@ -834,7 +1068,7 @@ function populateFormUI() {
     updateSummary(i);
   });
 }
-function openSheet(idx) { currentSheet = sheets[idx]; populateFormUI(); showView('form'); }
+function openSheet(idx) { currentSheet = sheets[idx]; populateFormUI(); showView('form', 'push'); }
 
 document.querySelectorAll('.perf-btn').forEach(btn => {
   btn.onclick = () => { document.querySelectorAll('.perf-btn').forEach(b => b.classList.remove('on')); btn.classList.add('on'); currentSheet.performance = btn.dataset.perf; };
@@ -844,7 +1078,7 @@ document.querySelectorAll('.again-btn').forEach(btn => {
 });
 
 document.getElementById('newSheetBtn').onclick = createNewSheet;
-document.getElementById('backToLib').onclick = () => { showView('library'); renderLibrary(); };
+document.getElementById('backToLib').onclick = () => { showView('library', 'pop'); renderLibrary(); };
 
 function syncFormToData() {
   currentSheet.facility = document.getElementById('fFacility').value;
@@ -879,7 +1113,8 @@ document.getElementById('saveSheetBtn').onclick = () => {
   if (idx >= 0) sheets[idx] = currentSheet; else sheets.push(currentSheet);
   if (!persistSheets()) return;
   localStorage.removeItem('times_working_draft_v1');
-  showView('library');
+  NativeHaptics.notification('SUCCESS');
+  showView('library', 'pop');
   renderLibrary();
 };
 
@@ -889,7 +1124,10 @@ document.getElementById('exportSheetBtn').onclick = async () => {
   if(!currentSheet.facility.trim()) issues.push('Facility name is blank');
   if(!currentSheet.weekStart) issues.push('Week starting date is blank');
   (currentSheet.days||[]).forEach((d,i)=>{ if((d.start||d.finish) && (!d.date || !d.start || !d.finish)) issues.push(`${DAY_FULL[i]} has incomplete date/time details`); });
-  if(issues.length && !confirm('Before exporting, please review:\n• '+issues.join('\n• ')+'\n\nExport anyway?')) return;
+  if(issues.length) {
+    const ok = await appConfirm('Before exporting, please review:\n• '+issues.join('\n• ')+'\n\nExport anyway?', 'Export Review');
+    if(!ok) return;
+  }
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
   const templateBytes = b64ToBytes(getActiveTemplateB64());
   const pdfDoc = await PDFDocument.load(templateBytes);
@@ -1005,10 +1243,44 @@ document.getElementById('exportSheetBtn').onclick = async () => {
     pdfDoc.setCreator('Times personal timesheet app');
   } catch (metadataError) { console.warn('Times PDF metadata could not be embedded', metadataError); }
   const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], {type:'application/pdf'});
-  const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
-  link.download = `Greenstaff_Timesheet_${(currentSheet.facility||'Agency').replace(/\s+/g,'_')}_${(currentSheet.weekStart||'').replace(/\//g,'-')}.pdf`;
-  link.click(); setTimeout(()=>URL.revokeObjectURL(link.href),500);
+  const fileName = `Greenstaff_Timesheet_${(currentSheet.facility||'Agency').replace(/\s+/g,'_')}_${(currentSheet.weekStart||'').replace(/\//g,'-')}.pdf`;
+
+  let sharedNatively = false;
+  if (window.Capacitor?.Plugins?.Filesystem && window.Capacitor?.Plugins?.Share) {
+    try {
+      let binary = '';
+      const len = pdfBytes.byteLength;
+      for (let i = 0; i < len; i += 0x8000) {
+        binary += String.fromCharCode.apply(null, pdfBytes.subarray(i, Math.min(i + 0x8000, len)));
+      }
+      const b64Data = btoa(binary);
+
+      const fileResult = await window.Capacitor.Plugins.Filesystem.writeFile({
+        path: fileName,
+        data: b64Data,
+        directory: 'CACHE'
+      });
+
+      await window.Capacitor.Plugins.Share.share({
+        title: fileName,
+        text: `Greenstaff Timesheet - ${currentSheet.facility || 'Agency'} - ${currentSheet.weekStart || ''}`,
+        url: fileResult.uri,
+        dialogTitle: 'Save or Share Timesheet'
+      });
+      NativeHaptics.notification('SUCCESS');
+      sharedNatively = true;
+    } catch (shareErr) {
+      console.warn('Native sharing failed, using browser download fallback', shareErr);
+    }
+  }
+
+  if (!sharedNatively) {
+    const blob = new Blob([pdfBytes], {type:'application/pdf'});
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click(); setTimeout(()=>URL.revokeObjectURL(link.href),500);
+    NativeHaptics.notification('SUCCESS');
+  }
 };
 
 // ---- Settings: template replace/reset ----
@@ -1022,17 +1294,17 @@ function renderSettings(){
     status.textContent = 'Using the default GreenStaff template (EEN 2.3, facility field blank).';
   }
 }
-document.getElementById('settingsBtn').onclick = () => { renderSettings(); showView('settings'); };
-document.getElementById('backToLibFromSettings').onclick = () => { showView('library'); renderLibrary(); };
+document.getElementById('settingsBtn').onclick = () => { renderSettings(); showView('settings', 'push'); };
+document.getElementById('backToLibFromSettings').onclick = () => { showView('library', 'pop'); renderLibrary(); };
 document.getElementById('templateUpload').addEventListener('change', (e) => {
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     const b64 = reader.result.split(',')[1];
     localStorage.setItem('customTemplateB64', b64);
     localStorage.setItem('customTemplateUploadedAt', new Date().toISOString());
     renderSettings();
-    alert('New base template saved. It will be used for all exports from now on.');
+    await appAlert('New base template saved. It will be used for all exports from now on.', 'Template Updated');
   };
   reader.readAsDataURL(file);
   e.target.value = '';
@@ -1196,11 +1468,57 @@ try {
   if(rawDraft) {
     const draft=JSON.parse(rawDraft);
     if(draft && draft.sheet && Array.isArray(draft.sheet.days)) {
-      const recover=confirm('A working draft was found from an earlier session. Restore it? Choose Cancel to keep it for later.');
-      if(recover) { currentSheet=normalizeImportedSheet(draft.sheet); populateFormUI(); showView('form'); }
+      setTimeout(async () => {
+        const recover=await appConfirm('A working draft was found from an earlier session. Restore it?\n\nChoose Cancel to keep it for later.', 'Restore Working Draft');
+        if(recover) { currentSheet=normalizeImportedSheet(draft.sheet); populateFormUI(); showView('form', 'push'); }
+      }, 500);
     }
   }
 } catch(e) { console.warn('Draft recovery check failed',e); }
+
+// Global tactile haptic click feedback for buttons
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('button, .btn-icon, .btn-glass, .btn-primary, .perf-btn, .again-btn, .shift-btn, .mini-action');
+  if (btn) {
+    NativeHaptics.impact('LIGHT');
+  }
+}, true);
+
+// Native iOS edge swipe to go back
+(function initEdgeSwipe() {
+  let startX = 0, startY = 0, isEdge = false;
+  window.addEventListener('touchstart', (e) => {
+    if (currentViewId === 'library') return;
+    const t = e.touches[0];
+    if (t.clientX < 35) {
+      startX = t.clientX;
+      startY = t.clientY;
+      isEdge = true;
+    } else {
+      isEdge = false;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', (e) => {
+    if (!isEdge || currentViewId === 'library') return;
+    const t = e.changedTouches[0];
+    const diffX = t.clientX - startX;
+    const diffY = Math.abs(t.clientY - startY);
+    if (diffX > 65 && diffY < 55) {
+      NativeHaptics.impact('LIGHT');
+      if (currentViewId === 'form') {
+        syncFormToData();
+        showView('library', 'pop');
+        renderLibrary();
+      } else if (currentViewId === 'settings') {
+        showView('library', 'pop');
+        renderLibrary();
+      }
+    }
+    isEdge = false;
+  }, { passive: true });
+})();
+
 renderLibrary();
 </script>
 

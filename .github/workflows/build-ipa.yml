@@ -21,11 +21,17 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Install Capacitor
+      - name: Install Capacitor & Native Plugins
         run: |
           set -euxo pipefail
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/ios
+          npm install @capacitor/core @capacitor/cli @capacitor/ios \
+            @capacitor/haptics \
+            @capacitor/status-bar \
+            @capacitor/share \
+            @capacitor/filesystem \
+            @capacitor/dialog \
+            @capacitor/keyboard
 
       - name: Prepare web files
         run: |
@@ -38,6 +44,29 @@ jobs:
         run: |
           set -euxo pipefail
           npx cap init "$APP_NAME" "$APP_ID" --web-dir www
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.dhruvverma.htmlapp",
+            "appName": "Times",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "plugins": {
+              "StatusBar": {
+                "style": "DARK",
+                "backgroundColor": "#090707",
+                "overlaysWebView": false
+              },
+              "Keyboard": {
+                "resize": "body",
+                "style": "DARK"
+              }
+            },
+            "ios": {
+              "backgroundColor": "#090707",
+              "scrollEnabled": true
+            }
+          }
+          EOF
           npx cap add ios
           npx cap sync ios
           ls -la ios/App

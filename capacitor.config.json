@@ -1,0 +1,21 @@
+{
+  "appId": "com.dhruvverma.htmlapp",
+  "appName": "Times",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#090707",
+      "overlaysWebView": false
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "DARK"
+    }
+  },
+  "ios": {
+    "backgroundColor": "#090707",
+    "scrollEnabled": true
+  }
+}
